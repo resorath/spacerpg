@@ -8,6 +8,8 @@ var player = {
     ship: new Object(),
     hitpoints: 20,
     mana: 20,
+    speed: 2000,
+    ready: false
 }
 
 var boss = {
@@ -15,6 +17,7 @@ var boss = {
     ship: new Object(),
     hitpoints: 100,
     mana: 20,
+    speed: 4000
 }
 
 var chrome = {
@@ -139,11 +142,18 @@ function keyDownHandler(e)
 
 game.commitMenu = function() {
 
+    if(!player.ready)
+        return;
+
     game.menu[Object.keys(game.menu)[game.menuselected]]();
+
+    playerTurnEnd();
 
 }
 
 game.moveMenuUp = function() {
+
+    if(!player.ready)
 
     if(game.menu == null)
         return;
@@ -157,6 +167,8 @@ game.moveMenuUp = function() {
 }
 
 game.moveMenuDown = function() {
+
+    if(!player.ready)
 
     if(game.menu == null)
         return;
@@ -183,7 +195,7 @@ function drawInterface()
 
     chrome.selector = createSelector(55, 440);
 
-    stage.addChild(chrome.mainMenuRect, chrome.hitpointsText, chrome.manapointsText, chrome.attackText, chrome.specialText, chrome.evadeText, chrome.withdrawText, chrome.selector);
+    stage.addChild(chrome.mainMenuRect, chrome.hitpointsText, chrome.manapointsText, chrome.attackText, chrome.specialText, chrome.evadeText, chrome.withdrawText);
 
 }
 
@@ -218,12 +230,67 @@ function createSelector(x, y)
     return r;
 }
 
+function createTimerRect(x, y)
+{
+    bar = new createjs.Shape() 
+        .set({x, y});
+    stage.addChild(bar);
+
+    bar.graphics.setStrokeStyle(2)
+        .beginStroke("#FFFFFF")
+        .drawRect(-1, -1, 302, 32)
+        .endStroke();
+
+    bar.graphics.beginFill("#FFFFFF")
+
+    c =  bar.graphics.drawRect(0,0,03).command;
+
+    createjs.Tween.get(c).to({w:300}, 3000, createjs.Ease.quadIn).call(function() {});
+
+    return bar;
+}
+
+function startPlayerTurnTimer()
+{
+    stage.removeChild(player.timerBar);
+
+    player.timerBar = createTimerRect(400, 420);
+
+    player.turnTimer = window.setTimeout(playerTurnReady, player.speed);
+
+    player.timerBarInterior = bar.graphics.drawRect(0,0,0,30).command;
+
+    createjs.Tween.get(player.timerBarInterior)
+      .to({w:300}, player.speed, createjs.Ease.quadIn);
+
+}
+
+function playerTurnReady()
+{
+    console.log("READY!");
+    player.ready = true;
+
+    stage.addChild(chrome.selector)
+}
+
+function playerTurnEnd()
+{
+    console.log("DONE!");
+    player.ready = false; 
+
+    stage.removeChild(chrome.selector);
+
+    startPlayerTurnTimer();
+}
+
 function startGame()
 {
     //stage.on("stagemousemove", moveShip); 
     //stage.on("stagemousedown", shoot)
       
     createjs.Ticker.addEventListener("tick", update); 
+
+    startPlayerTurnTimer();
 }
 
 function update() {
