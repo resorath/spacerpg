@@ -38,10 +38,10 @@ var keys = {
 
 var menu = {
     main: {
-        Attack: function() {},
-        Special: function() {},
-        Evade: function() {},
-        Withdraw: function() {}
+        Attack: function() { console.log("Attack!"); },
+        Special: function() { console.log("Special!"); },
+        Evade: function() { console.log("Evade!"); },
+        Withdraw: function() { console.log("Withdraw!"); }
     },
 }
 
@@ -66,6 +66,14 @@ function Main() {
         checkGfx();
     }
 
+    ps = new Image();
+    ps.src = 'img/playership.png';
+    ps.name = 'playership';
+    ps.onload = function(e) {
+        player.ship = new createjs.Bitmap(ps);
+        checkGfx();
+    }
+
 
 	createjs.Ticker.setFPS(30); 
 	createjs.Ticker.addEventListener("tick", stage);
@@ -79,7 +87,7 @@ function checkGfx()
 {     
     chrome.gfxLoaded++;
       
-    if(chrome.gfxLoaded == 1) 
+    if(chrome.gfxLoaded == 2) 
     { 
         addGameView(); 
     } 
@@ -89,10 +97,14 @@ function checkGfx()
 function addGameView() 
 { 
     player.ship.x = 40;
-    player.ship.y = 80;
+    player.ship.y = 200;
 
     /* Bottom Interface */
-    stage.addChild(chrome.background);
+    stage.addChild(chrome.background, player.ship);
+
+    createjs.Tween.get(player.ship, {loop: true})
+        .to({y: player.ship.y+10}, 1000)
+        .to({y: player.ship.y}, 1000);
 
 
     drawInterface();
@@ -149,7 +161,7 @@ game.moveMenuDown = function() {
     if(game.menu == null)
         return;
 
-    if(game.menuselected >= Object.keys(game.menu).length)
+    if(game.menuselected >= Object.keys(game.menu).length - 1)
         return;
 
     game.menuselected++;
