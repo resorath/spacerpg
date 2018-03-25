@@ -24,7 +24,40 @@ var boss = {
         {
             special: false,
             speed: 3000,
-            projectiles: new createjs.Container()
+            projectiles: new createjs.Container(),
+            action: function() {
+                var b = new createjs.Bitmap(boss.attacks.dragonbreath.image);
+                b.x = boss.sprite.x - 220;
+                b.y = boss.sprite.y + 45;
+
+                boss.attacks.dragonbreath.projectiles.addChild(b);
+
+                stage.update();
+
+                createjs.Sound.play('shot');
+
+                update = function() {
+
+                    for(var i = 0; i < boss.attacks.dragonbreath.projectiles.children.length; i++)
+                    {
+                        boss.attacks.dragonbreath.projectiles.children[i].x -= 10;
+
+                        if(boss.attacks.dragonbreath.projectiles.children[i].x < player.ship.x + 200)
+                        {
+                            boss.attacks.dragonbreath.projectiles.removeChildAt(i);
+
+                            createjs.Sound.play('explo');
+                            player.hitpoints -= 1;
+                            updateInterface();
+
+                            unregisterUpdate(update);
+                        }
+                    }
+
+                };
+
+                registerUpdate(update);
+            }
         },
         deepbreath: 
         {
@@ -47,7 +80,8 @@ var boss = {
 }
 
 var chrome = {
-    gfxLoaded: 0
+    gfxLoaded: 0,
+    updates: []
 }
 
 var game = {
@@ -265,6 +299,13 @@ function drawInterface()
 
 }
 
+function updateInterface()
+{
+
+    chrome.hitpointsText.text = player.hitpoints + " HP";
+    chrome.manapointsText.text = player.mana + " MP";
+}
+
 function createText(s, x, y)
 {
     r = new createjs.Text('0', 'bold 22px Courier New', '#FFFFFF');
@@ -362,16 +403,7 @@ function bossTurnReady()
     console.log("Rawr boss turn");
 
     // should pick an attack? only shoot fireballs for now
-    var b = new createjs.Bitmap(boss.attacks.dragonbreath.image);
-    b.x = boss.sprite.x - 220;
-    b.y = boss.sprite.y + 45;
-
-
-    boss.attacks.dragonbreath.projectiles.addChild(b);
-
-    stage.update();
-
-    createjs.Sound.play('shot');
+    boss.attacks.dragonbreath.action();
 
     startBossTurnTimer();
 }
@@ -409,21 +441,31 @@ function startGame()
     startPlayerTurnTimer();
 }
 
+function registerUpdate(callback)
+{
+    chrome.updates.push(callback);
+}
+
+function unregisterUpdate(callback)
+{
+    var loc = chrome.updates.indexOf(callback);
+    if(loc > -1)
+    {
+        chrome.updates.splice(loc, 1);
+    }
+}
+
 function update(e) {
 
-    // move attacks
-    for(var i = 0; i < boss.attacks.dragonbreath.projectiles.children.length; i++)
+    for(var i = 0; i < chrome.updates.length; i++)
     {
-        boss.attacks.dragonbreath.projectiles.children[i].x -= 10;
-
-        if(boss.attacks.dragonbreath.projectiles.children[i].x < player.ship.x + 200)
+        if(typeof chrome.updates[i] === 'function')
         {
-            boss.attacks.dragonbreath.projectiles.removeChildAt(i);
-
-            createjs.Sound.play('explo');
-            player.hitpoints -= 1;
-            drawInterface();
+            chrome.updates[i]();
         }
     }
+
+    // move attacks
+
 
 }
