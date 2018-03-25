@@ -13,7 +13,8 @@ var player = {
 }
 
 var boss = {
-    image: new Image(),
+    sprite: new Image(),
+    animation: {},
     ship: new Object(),
     hitpoints: 100,
     mana: 20,
@@ -41,10 +42,10 @@ var keys = {
 
 var menu = {
     main: {
-        Attack: function() { console.log("Attack!"); },
-        Special: function() { console.log("Special!"); },
-        Evade: function() { console.log("Evade!"); },
-        Withdraw: function() { console.log("Withdraw!"); }
+        Attack: function() { console.log("Attack!"); player.speed = 2000; },
+        Special: function() { console.log("Special!"); player.speed = 5000; },
+        Evade: function() { console.log("Evade!"); player.speed = 1500; },
+        Withdraw: function() { console.log("Withdraw!"); player.speed = 2000;}
     },
 }
 
@@ -58,6 +59,9 @@ function Main() {
 	createjs.Sound.registerSound('sound/boss.wav', 'boss', 1), 
     createjs.Sound.registerSound('sound/explo.wav', 'explo', 10), 
     createjs.Sound.registerSound('sound/shot.wav', 'shot', 10), 
+    createjs.Sound.registerSound('sound/kaching.wav', 'turnReady', 1);
+    createjs.Sound.registerSound('sound/sthip.wav', 'menuBlip', 1);
+    createjs.Sound.registerSound('sound/bring.wav', 'menuConfirm', 1);
 
 	/* Load GFX */
 	  
@@ -77,6 +81,24 @@ function Main() {
         checkGfx();
     }
 
+    var dragonsprite = {
+        images: ['img/dragon.png'],
+        frames: [
+            [439,144,190,144],
+            [625,154,184,137],
+            [806,164,187,141]
+        ],
+        animations: {
+            fly: [0, 2]
+        },
+        framerate: 4
+    };
+
+    var dragonspritess = new createjs.SpriteSheet(dragonsprite);
+    boss.sprite = new createjs.Sprite(dragonspritess);
+
+    checkGfx();
+
 
 	createjs.Ticker.setFPS(30); 
 	createjs.Ticker.addEventListener("tick", stage);
@@ -90,7 +112,7 @@ function checkGfx()
 {     
     chrome.gfxLoaded++;
       
-    if(chrome.gfxLoaded == 2) 
+    if(chrome.gfxLoaded == 3) 
     { 
         addGameView(); 
     } 
@@ -109,6 +131,14 @@ function addGameView()
         .to({y: player.ship.y+10}, 1000)
         .to({y: player.ship.y}, 1000);
 
+    boss.sprite.x = 740;
+    boss.sprite.y = 150;
+    boss.sprite.scaleX = -1.3;
+    boss.sprite.scaleY = 1.3;
+
+    boss.sprite.gotoAndPlay("fly");
+
+    stage.addChild(boss.sprite);
 
     drawInterface();
 
@@ -145,6 +175,8 @@ game.commitMenu = function() {
     if(!player.ready)
         return;
 
+    createjs.Sound.play('menuConfirm');
+
     game.menu[Object.keys(game.menu)[game.menuselected]]();
 
     playerTurnEnd();
@@ -161,6 +193,8 @@ game.moveMenuUp = function() {
     if(game.menuselected <= 0)
         return;
 
+    createjs.Sound.play('menuBlip');
+
     chrome.selector.y -= 30;
     game.menuselected--;
 
@@ -175,6 +209,8 @@ game.moveMenuDown = function() {
 
     if(game.menuselected >= Object.keys(game.menu).length - 1)
         return;
+
+    createjs.Sound.play('menuBlip');
 
     game.menuselected++;
 
@@ -268,6 +304,7 @@ function startPlayerTurnTimer()
 function playerTurnReady()
 {
     console.log("READY!");
+    createjs.Sound.play('turnReady');
     player.ready = true;
 
     stage.addChild(chrome.selector)
