@@ -18,7 +18,7 @@ var boss = {
     ship: new Object(),
     hitpoints: 100,
     mana: 20,
-    speed: 4000
+    speed: 3000
 }
 
 var chrome = {
@@ -286,13 +286,33 @@ function createTimerRect(x, y)
     return bar;
 }
 
+function Timer(callback, delay) {
+    var timerId, start, remaining = delay;
+
+    this.pause = function() {
+        window.clearTimeout(timerId);
+        remaining -= new Date() - start;
+    };
+
+    this.resume = function() {
+        start = new Date();
+        window.clearTimeout(timerId);
+        timerId = window.setTimeout(callback, remaining);
+    };
+
+    this.resume();
+}
+
 function startPlayerTurnTimer()
 {
     stage.removeChild(player.timerBar);
 
     player.timerBar = createTimerRect(400, 420);
 
-    player.turnTimer = window.setTimeout(playerTurnReady, player.speed);
+    player.turnTimer = new Timer(playerTurnReady, player.speed);
+
+    // resume boss turn
+    boss.turnTimer.resume();
 
     player.timerBarInterior = bar.graphics.drawRect(0,0,0,30).command;
 
@@ -301,11 +321,27 @@ function startPlayerTurnTimer()
 
 }
 
+function startBossTurnTimer()
+{
+    boss.turnTimer = new Timer(bossTurnReady, boss.speed);
+}
+
+function bossTurnReady()
+{
+    // boss turn
+    console.log("Rawr boss turn");
+
+    startBossTurnTimer();
+}
+
 function playerTurnReady()
 {
     console.log("READY!");
     createjs.Sound.play('turnReady');
     player.ready = true;
+
+    // pause boss turn timer
+    boss.turnTimer.pause();
 
     stage.addChild(chrome.selector)
 }
@@ -327,6 +363,7 @@ function startGame()
       
     createjs.Ticker.addEventListener("tick", update); 
 
+    startBossTurnTimer();
     startPlayerTurnTimer();
 }
 
