@@ -9,7 +9,46 @@ var player = {
     hitpoints: 20,
     mana: 20,
     speed: 2000,
-    ready: false
+    ready: false,
+    attacks: {
+        missiles: {
+            special: false,
+            speed: 3000,
+            projectiles: new createjs.Container(),
+            action: function() {
+                console.log("shootin");
+                // attack here
+                c = new createjs.Bitmap(player.attacks.missiles.image);
+                c.x = player.ship.x + 140;
+                c.y = player.ship.y + 52;
+
+                player.attacks.missiles.projectiles.addChild(c);
+
+                stage.update();
+
+                createjs.Sound.play('shot');
+                missileupdate = function() {
+                    // animation updates here
+                    for(var i = 0; i < player.attacks.missiles.projectiles.children.length; i++)
+                    {
+                        player.attacks.missiles.projectiles.children[i].x += 10;
+
+                        if(player.attacks.missiles.projectiles.children[i].x > boss.sprite.x - 200)
+                        {
+                            player.attacks.missiles.projectiles.removeChildAt(i);
+
+                            createjs.Sound.play('explo');
+                            boss.hitpoints -= 1;
+                            updateInterface();
+
+                            unregisterUpdate(missileupdate);
+                        }
+                    }
+                }
+                registerUpdate(missileupdate);
+            }
+        }
+    }
 }
 
 var boss = {
@@ -26,7 +65,7 @@ var boss = {
             speed: 3000,
             projectiles: new createjs.Container(),
             action: function() {
-                var b = new createjs.Bitmap(boss.attacks.dragonbreath.image);
+                b = new createjs.Bitmap(boss.attacks.dragonbreath.image);
                 b.x = boss.sprite.x - 220;
                 b.y = boss.sprite.y + 45;
 
@@ -36,7 +75,7 @@ var boss = {
 
                 createjs.Sound.play('shot');
 
-                update = function() {
+                dragonbreathupdate = function() {
 
                     for(var i = 0; i < boss.attacks.dragonbreath.projectiles.children.length; i++)
                     {
@@ -50,13 +89,13 @@ var boss = {
                             player.hitpoints -= 1;
                             updateInterface();
 
-                            unregisterUpdate(update);
+                            unregisterUpdate(dragonbreathupdate);
                         }
                     }
 
                 };
 
-                registerUpdate(update);
+                registerUpdate(dragonbreathupdate);
             }
         },
         deepbreath: 
@@ -101,7 +140,7 @@ var keys = {
 
 var menu = {
     main: {
-        Attack: function() { console.log("Attack!"); player.speed = 2000; },
+        Attack: function() { console.log("Attack!"); player.attacks.missiles.action(); player.speed = 2000; },
         Special: function() { console.log("Special!"); player.speed = 5000; },
         Evade: function() { console.log("Evade!"); player.speed = 1500; },
         Withdraw: function() { console.log("Withdraw!"); player.speed = 2000;}
@@ -163,6 +202,11 @@ function Main() {
     boss.attacks.dragonbreath.image.name = "dragonbreath";
     boss.attacks.dragonbreath.image.onload = checkGfx();
 
+    player.attacks.missiles.image = new Image();
+    player.attacks.missiles.image.src = "img/bullet.png";
+    player.attacks.missiles.image.name = "missiles";
+    player.attacks.missiles.image.onload = checkGfx();
+
 
 	createjs.Ticker.setFPS(30); 
 	createjs.Ticker.addEventListener("tick", stage);
@@ -176,7 +220,7 @@ function checkGfx()
 {     
     chrome.gfxLoaded++;
       
-    if(chrome.gfxLoaded == 4) 
+    if(chrome.gfxLoaded == 5) 
     { 
         addGameView(); 
     } 
@@ -189,7 +233,7 @@ function addGameView()
     player.ship.y = 200;
 
     /* Bottom Interface */
-    stage.addChild(chrome.background, player.ship);
+    stage.addChild(chrome.background, player.ship, player.attacks.missiles.projectiles);
 
     createjs.Tween.get(player.ship, {loop: true})
         .to({y: player.ship.y+10}, 1000)
